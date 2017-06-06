@@ -87,12 +87,11 @@ for iter = 1:numGen
     % ...
     numberOfElites = round(eliteFract*popSize);
     elitePop = zeros(numberOfElites, n);
-    [sortedDist, indices] = sort(totalDist)
+    [sortedDist, indices] = sort(totalDist);
     for i = 1:numberOfElites
-        row = pop(indices(i),:)
+        row = pop(indices(i),:);
         elitePop(i,:) = row;
     end
-    elitePop
     %%%%%%% end of elite selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % Selection of new population: use totalDist to clacluate the fitness
@@ -218,6 +217,12 @@ for iter = 1:numGen
             T1 = T12;
         %    Update T2 by removing from it the cities in T11
             %?????????????????????
+            for i = 1:length(T11)
+                k = find(T2==T11(i));
+                for j = 1:length(k)
+                   T2(k(j)) = []; 
+                end
+            end
         %    X = Tl;
             X = T1;
         %    Tl = T2;
