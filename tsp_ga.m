@@ -67,7 +67,10 @@ totalDist = zeros(1,popSize);
 % totalDist is the vector of distances.Each element of this vector corresponds
 % to the total distance (i.e. length) of a member of the population.
 
-
+%Our lists
+minDistances = [];
+avgFitnesses = [];
+optimalRoutes = zeros(numGen, n);
 
 %% Starting GA iterations. In each iteration, a new generation is created %%%%%%
 for iter = 1:numGen
@@ -117,7 +120,7 @@ for iter = 1:numGen
     for i = 1:length(p)
         q_i = 0;
         for j = 1:i
-            q_i = q_i + p(i);
+            q_i = q_i + p(j);
         end
         q = [q, q_i];
     end
@@ -129,21 +132,28 @@ for iter = 1:numGen
         if(r < q(1))
             %välj chromosome 1
             listOfChosenChromosomes = [listOfChosenChromosomes, 1];
-            continue;
-        end
-        for i = 2:q
-            if(r > q(i-1))
-                if(r < q(i))
-                    %välj chromosome i
-                    listOfChosenChromosomes = [listOfChosenChromosomes, i];
-                    break;
+            %continue;
+        else
+            for i = 2:length(q)
+                if(r > q(i-1))
+                    if(r < q(i))
+                        %välj chromosome i
+                        listOfChosenChromosomes = [listOfChosenChromosomes, i];
+                        break;
+                    end
                 end
             end
         end
     end
-    newPop = [];
-    for i = 1:listOfChosenChromosomes
-        newPop = [newPop, totalDist(i)]; %maybe change this????
+    %newPop = [];
+    %for i = 1:listOfChosenChromosomes
+    %    newPop = [newPop, totalDist(i)]; %maybe change this????
+    %end
+    newPop = zeros(length(listOfChosenChromosomes), n);
+    %[sortedDist, indices] = sort(totalDist);
+    for i = 1:length(listOfChosenChromosomes)
+        row = pop(i,:);
+        newPop(i,:) = row;
     end
     %%%%%%% end of roulette wheel selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -151,7 +161,8 @@ for iter = 1:numGen
     
     % Update distance vector totalDist according to the selected population
     % newPop. Your code for updating totalDist goes here:
-    totalDist = newPop;
+    %totalDist = newPop;
+    totalDist = calcToursDistances(newPop, popSize, dmat, n);
     %%%%%% end of totalDist update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
@@ -172,7 +183,7 @@ for iter = 1:numGen
     for i = 1:length(p)
         q_i = 0;
         for j = 1:i
-            q_i = q_i + p(i);
+            q_i = q_i + p(j);
         end
         q = [q, q_i];
     end
@@ -187,15 +198,19 @@ for iter = 1:numGen
     % be selected purely random from the population newPop.
     % Your code goes here:
     % your cross-over code
-    numberOfCrossovers = crossProb*popSize; %fixa avrudning till jämnt tal
+    offspringIndexes = [];
+    numberOfCrossovers = ceil(crossProb*popSize); %fixa avrudning till jämnt tal
+    if( mod(numberOfCrossovers, 2) ~= 0)
+        numberOfCrossovers = ceil(numberOfCrossovers + 1)
+    end
     for i = 1:(numberOfCrossovers/2)
         r1 = randi(popSize);
         r2 = randi(popSize);
-        if(r1 == r2)
-            r2 = randi(popSize); %cheating...but it will work!!!!!
+        while(r1 == r2)
+            r2 = randi(popSize);
         end
-        P1 = pop(r1,:); %TODO: change to newPop later
-        P2 = pop(r2,:); %TODO: change to newPop later
+        P1 = newPop(r1,:);
+        P2 = newPop(r2,:);
         T1 = P1;
         T2 = P2;
         K = floor(0.3*length(P1));
@@ -232,49 +247,73 @@ for iter = 1:numGen
         %End {while};
         end
         %Return O as the offspring
-    end
-    %%%%%%% End of cross-over operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %replace random parent with offspring!!!!
+        randomParent = randi(2);
+        overwriteIndex = 0;
+        if(randomParent == 1)
+            overwriteIndex = r1; %fix
+        else
+            overwriteIndex = r2; %fix
+        end
+        %offspringIndexes = [offspringIndexes overwriteIndex];
+        newPop(overwriteIndex,:) = O;
+        %%%%%%% End of cross-over operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
     
-    %%%%%%%%%%%%% Mutation Operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    r = rand();
-    if r <= mutProb
-        off_indx = randi([1 popSize], 1, 1); 
-        offspring = pop(off_indx, :); % replace this line of code so that the offspring
-                                      % will be the one created by the
-                                      % cross-over operation.
-       
-        routeInsertionPoints = sort(ceil(n*rand(1,2)));
-        I = routeInsertionPoints(1);
-        J = routeInsertionPoints(2);
-        
-        % 2-opt mutation (simply swaps two cities)
-        offspring([I J]) = offspring([J I]);
-        
-        % now, you should replace one of the parents invloved in
-        % cross-over with this mutated offspring, then update the
-        % population newPop.
+        %%%%%%%%%%%%% Mutation Operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        r = rand();
+        if r <= mutProb
+            %off_indx = randi([1 popSize], 1, 1); 
+            offspring = newPop(overwriteIndex,:);%pop(off_indx, :); % replace this line of code so that the offspring
+                                          % will be the one created by the
+                                          % cross-over operation.
+
+            routeInsertionPoints = sort(ceil(n*rand(1,2)));
+            I = routeInsertionPoints(1);
+            J = routeInsertionPoints(2);
+
+            % 2-opt mutation (simply swaps two cities)
+            offspring([I J]) = offspring([J I]);
+
+            % now, you should replace one of the parents invloved in
+            % cross-over with this mutated offspring, then update the
+            % population newPop.
+            newPop(overwriteIndex,:) = offspring;
+        end
     end
     
     %%%%%%%%%% End of mutation operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
     
     
     % Now, it is time to replace the worst members of newPop with the elite 
     % members you stored in matrix elitePop (see Elite selection in the begining
     % of this iteration).
     % Your code goes here:
-    % ...
-    % ...
-    % ...
-    % ...
+    totalDist = calcToursDistances(newPop, popSize, dmat, n); %recalculate the distances after crossover
+    [sortedTotalDist, totalDistIndices] = sort(totalDist,'descend');
+    for i = 1:numberOfElites
+        newPop(totalDistIndices(i),:) = elitePop(i,:);
+    end
     %%%%%%% End of elite replacement %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    
     % Finally, the new population newPop should become the current population.
-    % pop = newPop;    % Uncomment this line when you finished all previous
+    pop = newPop;    % Uncomment this line when you finished all previous
                        % steps.
+    %Let's calculate the fitness one last time
+    totalDist = calcToursDistances(newPop, popSize, dmat, n); %recalculate the distances after crossover
+    fitnessTotal = 0;
+    for i = 1:length(totalDist)
+        fitnessTotal = fitnessTotal + (1/totalDist(i));
+    end
+    averageFitness = fitnessTotal / popSize;
+    
+    %For Task 1, add the data of each iteration into arrays
+    minDistances = [minDistances min(totalDist)];
+    [minDist,index] = min(totalDist);
+    optRoute = pop(index,:);
+    optimalRoutes(iter,:) = row;
+    avgFitnesses = [avgFitnesses averageFitness];
 
 end
 %%%%%% End of GA ietartions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -283,6 +322,7 @@ end
 % Now, we find the best route in the last generation (you don't need to
 % change this part). The best route is returned in optRoute, and its 
 % distance in minDist.
+
 totalDist = calcToursDistances(pop, popSize, dmat, n);
 [minDist,index] = min(totalDist);
 optRoute = pop(index,:);
@@ -290,6 +330,9 @@ optRoute = pop(index,:);
 % Return Output (you don't need to change this part)
 if nargout
     resultStruct = struct( ...
+        'avgFitnesses',    avgFitnesses, ...
+        'optimalRoutes',    optimalRoutes, ...
+        'minDistances',    minDistances, ...
         'optRoute',    optRoute, ...
         'minDist',     minDist);
     

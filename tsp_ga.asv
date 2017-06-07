@@ -85,15 +85,14 @@ for iter = 1:numGen
     % ...
     % ...
     % ...
-    numberOfElites = eliteFract*popSize;
-    elitePop = [];
-    sortedDist = sort(totalDist)
+    numberOfElites = round(eliteFract*popSize);
+    elitePop = zeros(numberOfElites, n);
+    [sortedDist, indices] = sort(totalDist);
     for i = 1:numberOfElites
-        elitePop = [elitePop, sortedDist(i)];
+        row = pop(indices(i),:);
+        elitePop(i,:) = row;
     end
     %%%%%%% end of elite selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    
     
     % Selection of new population: use totalDist to clacluate the fitness
     % and the cummulative probability distribution of the current population
@@ -125,13 +124,13 @@ for iter = 1:numGen
     
     listOfChosenChromosomes = [];
     %popSize = 48;
-    for pop = 1:popSize
+    for z = 1:popSize
         r = rand; %should be random
         if(r < q(1))
             %välj chromosome 1
             listOfChosenChromosomes = [listOfChosenChromosomes, 1];
-            continue;
-        end
+            %continue;
+        else
         for i = 2:q
             if(r > q(i-1))
                 if(r < q(i))
@@ -142,9 +141,17 @@ for iter = 1:numGen
             end
         end
     end
-    newPop = [];
-    for i = 1:listOfChosenChromosomes
-        newPop = [newPop, totalDist(i)]; %maybe change this????
+    %newPop = [];
+    %for i = 1:listOfChosenChromosomes
+    %    newPop = [newPop, totalDist(i)]; %maybe change this????
+    %end
+    listOfChosenChromosomes
+    q
+    newPop = zeros(length(listOfChosenChromosomes), n);
+    %[sortedDist, indices] = sort(totalDist);
+    for i = 1:length(listOfChosenChromosomes)
+        row = pop(i,:);
+        newPop(i,:) = row;
     end
     %%%%%%% end of roulette wheel selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -152,7 +159,11 @@ for iter = 1:numGen
     
     % Update distance vector totalDist according to the selected population
     % newPop. Your code for updating totalDist goes here:
-    totalDist = newPop;
+    %totalDist = newPop;
+    popSize
+    n
+    newPop
+    totalDist = calcToursDistances(newPop, popSize, dmat, n);
     %%%%%% end of totalDist update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
@@ -188,55 +199,108 @@ for iter = 1:numGen
     % be selected purely random from the population newPop.
     % Your code goes here:
     % your cross-over code
-    numberOfCrossovers = crossProb*popSize; %fixa avrudning till jämnt tal
-    for i = 1:(numberOfCrossovers/2)
-        r1 = rand;
-        r2 = rand;
-        i1 = floor(r1*(length(totalDist)-1)) + 1;
-        i2 = floor(r2*(length(totalDist)-1) + 1);
-        i1 = round(rand(popSize)*48)
+    offspringIndexes = [];
+    numberOfCrossovers = ceil(crossProb*popSize); %fixa avrudning till jämnt tal
+    if( mod(numberOfCrossovers, 2) ~= 0)
+        numberOfCrossovers = ceil(numberOfCrossovers + 1)
     end
-    %%%%%%% End of cross-over operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    
-    
-    %%%%%%%%%%%%% Mutation Operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    r = rand();
-    if r <= mutProb
-        off_indx = randi([1 popSize], 1, 1); 
-        offspring = pop(off_indx, :); % replace this line of code so that the offspring
-                                      % will be the one created by the
-                                      % cross-over operation.
-       
-        routeInsertionPoints = sort(ceil(n*rand(1,2)));
-        I = routeInsertionPoints(1);
-        J = routeInsertionPoints(2);
+    for i = 1:(numberOfCrossovers/2)
+        r1 = randi(popSize);
+        r2 = randi(popSize);
+        while(r1 == r2)
+            r2 = randi(popSize);
+        end
+        P1 = newPop(r1,:);
+        P2 = newPop(r2,:);
+        T1 = P1;
+        T2 = P2;
+        K = floor(0.3*length(P1));
+        e = '';
+        O = [];
         
-        % 2-opt mutation (simply swaps two cities)
-        offspring([I J]) = offspring([J I]);
-        
-        % now, you should replace one of the parents invloved in
-        % cross-over with this mutated offspring, then update the
-        % population newPop.
+        %While Tl ? ? do
+        while(length(T1) > 0)
+        %    Split Tl in two sub-tours T11 and T12 such that length of T11 = min {length of T1, K};
+            T11_length = length(T1);
+            if(T11_length > K)
+                T11_length = K;
+            end
+            T11 =  T1(1:T11_length);
+            T12 =  T1(T11_length+1:length(T1));
+        %    Append T11 to O;
+            O = [O T11];
+        %    Update Tl by removing from it the cities in T11
+            T1 = T12;
+        %    Update T2 by removing from it the cities in T11
+            %?????????????????????
+            for i = 1:length(T11)
+                k = find(T2==T11(i));
+                for j = 1:length(k)
+                   T2(k(j)) = []; 
+                end
+            end
+        %    X = Tl;
+            X = T1;
+        %    Tl = T2;
+            T1 = T2;
+        %    T2 = X;
+            T2 = X;
+        %End {while};
+        end
+        %Return O as the offspring
+        %replace random parent with offspring!!!!
+        randomParent = randi(2);
+        overwriteIndex = 0;
+        if(randomParent == 1)
+            overwriteIndex = r1; %fix
+        else
+            overwriteIndex = r2; %fix
+        end
+        %offspringIndexes = [offspringIndexes overwriteIndex];
+        newPop(overwriteIndex,:) = O;
+        %%%%%%% End of cross-over operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+    
+        %%%%%%%%%%%%% Mutation Operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        r = rand();
+        if r <= mutProb
+            %off_indx = randi([1 popSize], 1, 1); 
+            offspring = newPop(overwriteIndex,:);%pop(off_indx, :); % replace this line of code so that the offspring
+                                          % will be the one created by the
+                                          % cross-over operation.
+
+            routeInsertionPoints = sort(ceil(n*rand(1,2)));
+            I = routeInsertionPoints(1);
+            J = routeInsertionPoints(2);
+
+            % 2-opt mutation (simply swaps two cities)
+            offspring([I J]) = offspring([J I]);
+
+            % now, you should replace one of the parents invloved in
+            % cross-over with this mutated offspring, then update the
+            % population newPop.
+            newPop(overwriteIndex,:) = offspring;
+        end
     end
     
     %%%%%%%%%% End of mutation operator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
     
     
     % Now, it is time to replace the worst members of newPop with the elite 
     % members you stored in matrix elitePop (see Elite selection in the begining
     % of this iteration).
     % Your code goes here:
-    % ...
-    % ...
-    % ...
-    % ...
+    totalDist = calcToursDistances(newPop, popSize, dmat, n); %recalculate the distances after crossover
+    [sortedTotalDist, totalDistIndices] = sort(totalDist,'descend');
+    for i = 1:numberOfElites
+        newPop(totalDistIndices(i),:) = elitePop(i,:);
+    end
     %%%%%%% End of elite replacement %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
     % Finally, the new population newPop should become the current population.
-    % pop = newPop;    % Uncomment this line when you finished all previous
+    pop = newPop;    % Uncomment this line when you finished all previous
                        % steps.
 
 end

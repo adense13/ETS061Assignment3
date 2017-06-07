@@ -41,12 +41,11 @@ end
 %% Then, choose which data file you wish to experiment with.
 % Below is the list of various data files with different number of cities:
 
-% loadatt48();         % 48 cities
-% loadst70();          % 70 cities
-% loadgr96();          % 96 cities
+loadatt48();         % 48 cities
+%loadst70();          % 70 cities
+%loadgr96();          % 96 cities
 
 % I have chosen a data file from the above list
- loadatt48();
 
 %% prepare the distance matrix
 load('cities.mat');
@@ -54,20 +53,37 @@ xy = cities';
 
 % you should update the following code to obtain the average and 95%
 % confidence interval for each configuration of numGen
-for numGen = 100:100:2000
-    for runs = 1:15
+%for numGen = 100:100:2000
+%    for runs = 1:15
+        numGen = 4000; %For Task 1
         userConfig = struct('xy', xy, 'popSize', 200, 'numGen', numGen, 'crossProb', 0.25, 'mutProb', 0.5, 'eliteFract', 0.02);
         resultStruct = tsp_ga(userConfig);
         
         % the best tour found by GA
         % fprintf('\nBest tour found by GA:\n');
-        % resultStruct.optRoute
+         %resultStruct.optRoute
+         %resultStruct.minRoute
+         
+         figure
+         plot(1:4000, resultStruct.minDistances)
+         title('Min. distances 48')
+         xlabel('Iterations')
+         ylabel('Min. distance')
+         
+         figure
+         plot(1:4000, resultStruct.avgFitnesses, 'g')
+         title('Average fitnesses 48')
+         xlabel('Iterations')
+         ylabel('Average fitness')
+         
+         resultStruct48 = resultStruct;
+        
         
         % the distance of the best tour
-        fprintf('\n Number of generations: %d \n Run number: %d \n The distance of the best tour = %d\n',numGen, runs, resultStruct.minDist);
+        %fprintf('\n Number of generations: %d \n Run number: %d \n The distance of the best tour = %d\n',numGen, runs, resultStruct.minDist);
         
-    end
-end
+%    end
+%end
 
 % Implement your plotting here, using the average and confidence interval results:
 % plots ...
