@@ -309,7 +309,7 @@ for iter = 1:numGen
     averageFitness = fitnessTotal / popSize;
     
     %For Task 1, add the data of each iteration into arrays
-    minDistances = [minDistances min(totalDist)];
+    minDistances = [minDistances (1/min(totalDist))];
     [minDist,index] = min(totalDist);
     optRoute = pop(index,:);
     optimalRoutes(iter,:) = row;

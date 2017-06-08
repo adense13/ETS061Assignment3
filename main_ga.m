@@ -65,16 +65,19 @@ xy = cities';
          %resultStruct.minRoute
          
          figure
-         plot(1:4000, resultStruct.minDistances)
-         title('Min. distances 48')
+         plot(1:4000, (resultStruct.minDistances), 'b')
+         title('Fitness 48')
          xlabel('Iterations')
-         ylabel('Min. distance')
+         ylabel('Fitness level')
          
-         figure
+         hold on
          plot(1:4000, resultStruct.avgFitnesses, 'g')
-         title('Average fitnesses 48')
-         xlabel('Iterations')
-         ylabel('Average fitness')
+         hold on
+         
+         %figure
+         %title('Average fitnesses 48')
+         %xlabel('Iterations')
+         %ylabel('Average fitness')
          
          resultStruct48 = resultStruct;
         
