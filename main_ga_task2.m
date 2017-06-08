@@ -53,37 +53,53 @@ xy = cities';
 
 % you should update the following code to obtain the average and 95%
 % confidence interval for each configuration of numGen
-%for numGen = 100:100:2000
-%    for runs = 1:15
-        numGen = 4000; %For Task 1
+CILowerBound = [];
+CIUpperBound = [];
+avgValues = [];
+for numGen = 100:100:2000
+    bestValues = [];
+    for runs = 1:15
         userConfig = struct('xy', xy, 'popSize', 200, 'numGen', numGen, 'crossProb', 0.25, 'mutProb', 0.5, 'eliteFract', 0.02);
         resultStruct = tsp_ga(userConfig);
-        
+        bestValues = [bestValues resultStruct.minDist];
         % the best tour found by GA
         % fprintf('\nBest tour found by GA:\n');
          %resultStruct.optRoute
          %resultStruct.minRoute
-         
-         figure
-         plot(1:4000, resultStruct.minDistances)
-         title('Min. distances 48')
-         xlabel('Iterations')
-         ylabel('Min. distance')
-         
-         figure
-         plot(1:4000, resultStruct.avgFitnesses, 'g')
-         title('Average fitnesses 48')
-         xlabel('Iterations')
-         ylabel('Average fitness')
-         
-         resultStruct48 = resultStruct;
-        
-        
         % the distance of the best tour
         %fprintf('\n Number of generations: %d \n Run number: %d \n The distance of the best tour = %d\n',numGen, runs, resultStruct.minDist);
-        
-%    end
-%end
+    end
+    SEM = std(bestValues)/sqrt(length(bestValues));               % Standard Error
+    ts = tinv([0.025  0.975],length(bestValues)-1);      % T-Score
+    MEAN = mean(bestValues);
+    CI = MEAN + ts*SEM;                      % Confidence Intervals
+    avgValues = [avgValues MEAN];
+    CILowerBound = [CILowerBound CI(1)];
+    CIUpperBound = [CIUpperBound CI(2)];
+end
+
+figure
+plot(1:length(avgValues), avgValues, 'r');
+title('Best tours')
+xlabel('numGen loops')
+ylabel('Avg and CI of best tour')
+
+hold on
+plot(1:length(CILowerBound),CILowerBound, 'b')
+plot(1:length(CIUpperBound),CIUpperBound, 'b')
+hold off
 
 % Implement your plotting here, using the average and confidence interval results:
 % plots ...
+
+%x = randi(50, 1, 100);                      % Create Data
+%SEM = std(x)/sqrt(length(x));               % Standard Error
+%ts = tinv([0.025  0.975],length(x)-1);      % T-Score
+%CI = mean(x) + ts*SEM;                      % Confidence Intervals
+
+
+%figure
+%plot(1:4000, resultStruct.minDistances)
+%title('Min. distances 48')
+%xlabel('Iterations')
+%ylabel('Min. distance')
