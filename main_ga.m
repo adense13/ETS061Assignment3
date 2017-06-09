@@ -73,15 +73,13 @@ xy = cities';
          hold on
          plot(1:4000, resultStruct.avgFitnesses, 'g')
          hold on
+         legend('Best fitness','Average fitness', 'Location','southeast')
          
          %figure
          %title('Average fitnesses 48')
          %xlabel('Iterations')
          %ylabel('Average fitness')
          
-         resultStruct48 = resultStruct;
-        
-        
         % the distance of the best tour
         %fprintf('\n Number of generations: %d \n Run number: %d \n The distance of the best tour = %d\n',numGen, runs, resultStruct.minDist);
         
